@@ -1,6 +1,8 @@
 const Helper = require('Helpers');
 const Job = require('JobFactory');
 
+const HarvestRequirement = require('Requirements.Harvest');
+
 module.exports = class EntityCreep 
 {
     constructor(creep)
@@ -8,29 +10,84 @@ module.exports = class EntityCreep
         this.creep = creep;
         this.role = 'harvester';
         
-        if(!this.creep.memory.jobs) {
-            this.creep.memory.jobs = [];
+        this.randomMessage = [
+            '🔥',
+            '💣',
+        ];
+        
+        // this.creep.say(this.randomMessage[Math.floor(Math.random() * this.randomMessage.length)], true);
+        
+        if(Math.ceil(Math.random() * 10) === Game.time % 10) {
+            this.creep.say(this.randomMessage[Math.floor(Math.random() * this.randomMessage.length)], true);
         }
     }
     
-    restoreJobs(originalJobs) 
+    getJobs(roomName, ignoreDependencyJobs = false)
     {
         /**
-         * Force the originalJobs to be an array even if we pass in one value:
+         * If the job instructions for this room are not set, set them up and return an empty array
          */
-        if(typeof originalJobs !== 'object') {
-            originalJobs = [originalJobs];
-        }    
+        if(Memory.jobInstructions === undefined) {
+            Memory.jobInstructions = {};
+            return [];
+        }
         
-        this.jobs = originalJobs;
+        if(Memory.jobInstructions[roomName] === undefined) {
+            Memory.jobInstructions[roomName] = [];
+            return [];
+        }
+        
+        /**
+         * Returns jobs that has an assignee that match this creeps id
+         */
+        let jobs = _.filter(Memory.jobInstructions[roomName], (jobInstruction) => {
+            return this.creep.id === _.find(jobInstruction.assignees, (assignee) => {
+                return this.creep.id === assignee;
+            });
+        });
+
+        if(ignoreDependencyJobs) {
+            jobs = _.filter(jobs, (job) => {
+                /**
+                 * Returns false for jobs that have dependencies, if the ignoreDependencyJobs flag is set to true.
+                 */
+                return !(ignoreDependencyJobs && job.dependencyOf);
+            });
+        }
+
+        return jobs;
     }
     
-    work()
+    work(roomName)
     {
-        if(this.creep.memory.jobs.length) {
-            let job = new Job(this.creep.memory.jobs[0]);
-            job.run();
+        let creepsJobs = this.getJobs(roomName);
+        
+        if(creepsJobs.length) {
+            
+            let nextJob = this.getDependencies(roomName, creepsJobs[0]);
+            
+            let job = new Job(roomName, nextJob);
+            return job.run();
+            
+        } else {
+                
+            return this.idle(roomName);
         }
+    }
+    
+    /**
+     * Given a job that has dependencies (Don't worry, this method will check that too), this method
+     * will drill down until it finds a job without dependencies.
+     */
+    getDependencies(roomName, parentJob)
+    {
+        if(!parentJob.dependencies || !parentJob.dependencies.length) {
+            return parentJob;
+        }
+        
+        const dependencyJob = Helper.findJobInstructionInMemory(roomName, parentJob.dependencies[0]);
+        
+        return this.getDependencies(roomName, dependencyJob);
     }
     
     /**
@@ -38,6 +95,15 @@ module.exports = class EntityCreep
      */
     isAlive()
     {
-       return !!Game.getObjectById(this.assignee);
+       return !!Game.getObjectById(this.creep);
+    }
+    
+    idle(roomName) 
+    {
+        // @TODO: Remove hardcoded spawn
+        let harvestRequirement = new HarvestRequirement(Game.spawns['home']);
+        let harvestResolution = harvestRequirement.getResolution();
+        harvestResolution.assignees = [this.creep.id];
+        Memory.jobInstructions[roomName].push(harvestResolution);
     }
 }

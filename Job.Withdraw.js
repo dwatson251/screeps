@@ -23,29 +23,32 @@ module.exports = class JobTransfer extends JobBase
     run() 
     {
         // @TODO: Remove hardcoded spawn
+        // @TODO: Add support for multiple assignees (Only register as done when all creeps have completed the task)
         
         /**
          * Checks whether the amount of resources available is too low to perform this job effectively,
          * and pushes an additional job to this creep.
          */
-        if(this.assignee.carryCapacity > Game.spawns['home'].energy && this.assignee.carryCapacity < Game.spawns['home'].energyCapacity) {
-            /** Harvest 4x as much as we need */
-            for(let i = 0; i < 4; i++) {
-                let harvestRequirement = new HarvestRequirement(Game.spawns['home']);
-                let harvestResolution = harvestRequirement.getResolution();
-                harvestResolution.assignee = this.assignee.id;
-                this.assignee.memory.jobs.unshift(harvestResolution);
-            }
-        } else {
-            /**
-             * Attempts to withdraw from a source of energy
-             */
-            if(this.assignee.withdraw(this.source, this.resource) == ERR_NOT_IN_RANGE) {
-                this.assignee.moveTo(this.source);
+        _.forEach(this.assignees, (assignee) => {
+            if(assignee.carryCapacity > Game.spawns['home'].energy && assignee.carryCapacity < Game.spawns['home'].energyCapacity) {
+                /** Harvest 3x as much as we need */
+                for(let i = 0; i < 3; i++) {
+                    let harvestRequirement = new HarvestRequirement(Game.spawns['home']);
+                    let harvestResolution = harvestRequirement.getResolution();
+                    harvestResolution.assignees = [assignee.id];
+                    this.addJobDependency(harvestResolution);
+                }
             } else {
-                this.done();
+                /**
+                 * Attempts to withdraw from a source of energy
+                 */
+                if(assignee.withdraw(this.source, this.resource) == ERR_NOT_IN_RANGE) {
+                    assignee.moveTo(this.source);
+                } else {
+                    this.done();
+                }
             }
-        }
+        });
         
     }
 }

@@ -1,30 +1,22 @@
 const Helper = require('Helpers');
+const RequirementsBase = require('Requirements.Base');
 
-module.exports = class RequirementsMoveToEnergySource
+module.exports = class RequirementsMoveToEnergySource extends RequirementsBase
 {
     constructor(poi) 
     {
+        super();
+        
         this.poi = poi;
+        
+        this.resolution = {
+            job: 'move',
+            source: this.poi.id,
+        };
     }
     
     test() 
     {
         return true;
-    }
-    
-    getResolution(requirementKey = '')
-    {
-        /**
-         * Returns data required to create a new job
-         */
-        return {
-            id: 'job-' + this.poi.id + '-' + Game.time + '-' + Helper.uid(),
-            job: 'move',
-            requiredBy: requirementKey,
-            params: [
-                /** Target */
-                this.poi.id,
-            ]
-        }
     }
 }

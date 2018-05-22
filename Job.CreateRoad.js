@@ -22,7 +22,9 @@ module.exports = class JobCreateRoad extends JobBase
     
     run() 
     {
-        let roadPositions = this.source.pos.findPathTo(this.target);
+        let roadPositions = this.source.pos.findPathTo(this.target, {
+            avoid: [],
+        });
         
         
         for(let roadPositionKey in roadPositions) {

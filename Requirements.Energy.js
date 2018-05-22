@@ -1,10 +1,18 @@
 const Helper = require('Helpers');
+const RequirementsBase = require('Requirements.Base');
 
-module.exports = class RequirementsEnergy 
+module.exports = class RequirementsEnergy extends RequirementsBase
 {
     constructor(structure) 
     {
+        super();
+        
         this.structure = structure;
+        
+        this.resolution = {
+            job: 'transfer',
+            source: this.structure.id,
+        };
     }
     
     test() 
@@ -15,24 +23,6 @@ module.exports = class RequirementsEnergy
             return this.structure.energy < this.structure.energyCapacity;
         } else {
             return false;
-        }
-    }
-    
-    getResolution()
-    {
-        /**
-         * Returns data required to create a new job
-         */
-        return {
-            id: 'job-' + this.structure.id + '-' + Game.time + '-' + Helper.uid(),
-            job: 'transfer',
-            params: [
-                /** Target */
-                this.structure.id,
-                
-                /** Resource */
-                RESOURCE_ENERGY
-            ]
         }
     }
 }

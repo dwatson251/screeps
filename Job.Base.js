@@ -11,10 +11,14 @@ module.exports = class JobBase
     constructor() 
     {
         this.id = null;
+        this.roomName = null;
+        this.dependencyOf = null;
         this.assignee = null;
+        this.assignees = [];
         this.priority = 0;
         this.source = null;
         this.requiredBy = null;
+        this.maxAssignees = 1;
     }
     
     /**
@@ -30,18 +34,26 @@ module.exports = class JobBase
         let jobId = this.id;
         
         /**
-         * Remove the job from the creeps job memory:
+         * Remove the job from the job list
          */
-        _.remove(this.assignee.memory.jobs, function(jobInstruction) {
+        _.remove(Memory.jobInstructions[this.roomName], function(jobInstruction) {
             return jobId === jobInstruction.id;
         });
         
         /**
-         * Remove the job from the job list
+         * If this job was a dependency for another job, remove this job
+         * from the parents job dependency list
          */
-        _.remove(Memory.jobInstructions, function(jobInstruction) {
-            return jobId === jobInstruction.id;
-        });
+        if(this.dependencyOf) {
+            
+            let jobDependencyOf = Helper.findJobInstructionInMemory(this.roomName, this.dependencyOf);
+        
+            if(jobDependencyOf !== undefined && jobDependencyOf.dependencies !== undefined && jobDependencyOf.dependencies.length) {
+                _.remove(jobDependencyOf.dependencies, function(jobInstruction) {
+                    return jobId === jobInstruction;
+                });
+            }
+        }
                 
         /**
          * Remove the job requirement
@@ -64,6 +76,13 @@ module.exports = class JobBase
         return this;
     }
     
+    setRoomName(roomName)
+    {
+        this.roomName = roomName;
+        
+        return this;
+    }
+    
     setSource(source)
     {
         this.source = Game.getObjectById(source);
@@ -71,9 +90,27 @@ module.exports = class JobBase
         return this;
     }
     
-    setAssignee(assigneeId) 
+    setMaxAssignees(maxAssignees)
     {
-        this.assignee = assigneeId;
+        this.maxAssignees = maxAssignees;
+        
+        return this;
+    }
+    
+    addAssignee(assigneeId) 
+    {
+        if(this.assignees.length < this.maxAssignees) {
+            this.assignees.push(assigneeId);
+        }
+        
+        return this;
+    }
+    
+    setAssignees(assignees = []) 
+    {
+        _.forEach(assignees, (assignee) => {
+           this.assignees.push(Game.getObjectById(assignee)); 
+        });
         
         return this;
     }
@@ -83,5 +120,27 @@ module.exports = class JobBase
         this.requiredBy = requiredBy;
         
         return this;
+    }
+    
+    setDependencyOf(dependencyOf)
+    {
+        this.dependencyOf = dependencyOf;
+        
+        return this;
+    }
+    
+    addJobDependency(jobInstruction)
+    {
+        let jobInstructionInMemory = Helper.findJobInstructionInMemory(this.roomName, this.id);
+        
+        jobInstruction.dependencyOf = this.id;
+        
+        if(!jobInstructionInMemory.dependencies) {
+            jobInstructionInMemory.dependencies = [];
+        }
+        
+        Memory.jobInstructions[this.roomName].push(jobInstruction);
+        
+        jobInstructionInMemory.dependencies.unshift(jobInstruction.id);
     }
 }

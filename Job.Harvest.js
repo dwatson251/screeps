@@ -22,7 +22,7 @@ module.exports = class JobTransfer extends JobBase
     
     run() 
     {
-        var creep = this.assignee;
+        const creep = this.assignees[0];
         
         if(creep.carry.energy < creep.carryCapacity) {
             

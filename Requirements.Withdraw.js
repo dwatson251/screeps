@@ -1,24 +1,23 @@
 const Helper = require('Helpers');
+const RequirementsBase = require('Requirements.Base');
 
-module.exports = class RequirementsWithdraw
+module.exports = class RequirementsWithdraw extends RequirementsBase
 {
-    constructor(structure) 
+    constructor(creep) 
     {
-        this.structure = structure;
+        super();
+        
+        this.creep = creep;
+        let closestSpawn = this.creep.pos.findClosestByPath(FIND_MY_SPAWNS);
+        
+        this.resolution = {
+            job: 'withdraw',
+            source: closestSpawn.id,
+        }
     }
     
     test(built) 
     {
         return true;
-    }
-    
-    getResolution(requirementKey)
-    {
-        return {
-            id: 'job-' + this.structure.id + '-' + Game.time + '-' + Helper.uid(),
-            job: 'withdraw',
-            source: this.structure.id,
-            requiredBy: requirementKey,
-        }
     }
 }

@@ -4,6 +4,7 @@ const requirementsToTest = {
     // 'Energy': require('Requirements.Energy')
     'IncreaseStructureController': require('Requirements.IncreaseStructureController'),
     'Build': require('Requirements.Build'),
+    'Repair': require('Requirements.Repair'),
 };
 
 module.exports = class EntityStructure 

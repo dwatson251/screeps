@@ -1,10 +1,19 @@
 const Helper = require('Helpers');
+const RequirementsBase = require('Requirements.Base');
 
-module.exports = class RequirementsIncreaseStructureController
+module.exports = class RequirementsIncreaseStructureController extends RequirementsBase
 {
     constructor(structure) 
     {
+        super();
+        
         this.structure = structure;
+        
+        this.resolution = {
+            job: 'upgrade',
+            source: this.structure.id,
+            maxAssignees: 2,
+        }
     }
     
     test() 
@@ -15,16 +24,6 @@ module.exports = class RequirementsIncreaseStructureController
             // return this.structure.progress < this.structure.progressTotal || true;
         } else {
             return false;
-        }
-    }
-    
-    getResolution(requirementKey)
-    {
-        return {
-            id: 'job-' + this.structure.id + '-' + Game.time  + '-' + Helper.uid(),
-            job: 'upgrade',
-            requiredBy: requirementKey,
-            source: this.structure.id,
         }
     }
 }

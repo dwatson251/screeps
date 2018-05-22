@@ -29,6 +29,13 @@ module.exports = {
       }
     },
     
+    findJobInstructionInMemory: function(roomName, jobId)
+    {
+        return _.find(Memory.jobInstructions[roomName], (jobInstruction) => {
+            return jobInstruction.id === jobId;
+        });
+    },
+    
     addRequirement: function(structureId, requirementKey)
     {
         if(Memory.activeRequirements[structureId] === undefined) {
@@ -55,5 +62,37 @@ module.exports = {
     uid: function()
     {
         return Math.floor(new Date().valueOf() * Math.random());
+    },
+    
+    /**
+     * Return an array of jobs from the memory job object
+     * that have not been assigned by a creep in a specified room.
+     */
+    findUnassignedJobs: function(roomName)
+    {
+        return _.filter(Memory.jobInstructions[roomName], function(job) {
+
+            if(job.assignees === undefined) {
+                job.assignees = [];
+            }
+
+            return job.assignees.length === 0;
+        });
+    },
+    
+    /**
+     * Return a list of jobs in this room that have assignees, but the job 
+     * allows multiple assignees and the assignee limit is not reached.
+     */
+    findAssistanceJobs: function(roomName)
+    {
+        return _.filter(Memory.jobInstructions[roomName], function(job) {
+
+            if(job.assignees === undefined) {
+                job.assignees = [];
+            }
+
+            return job.assignees.length < job.maxAssignees;
+        });
     },
 };
