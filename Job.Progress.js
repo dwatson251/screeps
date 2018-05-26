@@ -9,25 +9,30 @@ const WithdrawRequirement = require('Requirements.Withdraw');
  * Transfers a specified amount of a resource to a specific target
  * 
  */
-module.exports = class JobUpgrade extends JobBase
+module.exports = class JobProgress extends JobBase
 {
-    constructor() {
+    constructor() 
+    {
         super();
-
+        
         return this;
     }
-
-    run() {
-
-        /**
-         * @TODO: Add dependencies, so that if we're out of energy, it will run a different job
-         */
-
+    
+    run() 
+    {
         if (this.source) {
+            
+            let action = 'build';
+            
+            if(this.source.structureType === STRUCTURE_CONTROLLER) {
+                action = 'upgradeController'
+            }
 
             _.forEach(this.assignees, (assignee) => {
+                
+                // console.log('assignee: ' + assignee.id, 'Progress', assignee[action](this.source));
 
-                switch (assignee.upgradeController(this.source)) {
+                switch (assignee[action](this.source)) {
 
                     case ERR_NOT_ENOUGH_RESOURCES:
 
@@ -45,17 +50,19 @@ module.exports = class JobUpgrade extends JobBase
                     case ERR_INVALID_TARGET:
                         this.done();
                         break;
+                        
+                    case OK:
+                        // Progress as normal, no problems here
+                        break;
 
                     default:
+                        this.done();
                         break;
                 }
             });
 
-
         } else {
             this.done();
         }
-
     }
-
 }

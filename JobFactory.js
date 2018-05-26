@@ -51,6 +51,13 @@ module.exports = class JobFactory
             job.setDependencyOf(jobInstruction.dependencyOf);
         }
         
+        /**
+         * If this job has a priority, set it here:
+         */
+        if(jobInstruction.priority) {
+            job.setPriority(jobInstruction.priority);
+        }
+        
         return job;
     }
 }

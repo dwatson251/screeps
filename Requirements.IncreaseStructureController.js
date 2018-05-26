@@ -12,7 +12,7 @@ module.exports = class RequirementsIncreaseStructureController extends Requireme
         this.resolution = {
             job: 'upgrade',
             source: this.structure.id,
-            maxAssignees: 2,
+            maxAssignees: 1,
         }
     }
     

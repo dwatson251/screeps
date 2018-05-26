@@ -70,7 +70,7 @@ module.exports = {
      */
     findUnassignedJobs: function(roomName)
     {
-        return _.filter(Memory.jobInstructions[roomName], function(job) {
+        let unassignedJobs = _.filter(Memory.jobInstructions[roomName], function(job) {
 
             if(job.assignees === undefined) {
                 job.assignees = [];
@@ -78,6 +78,8 @@ module.exports = {
 
             return job.assignees.length === 0;
         });
+        
+        return _.sortByOrder(unassignedJobs, ['priority'], ['desc']);
     },
     
     /**
@@ -86,7 +88,7 @@ module.exports = {
      */
     findAssistanceJobs: function(roomName)
     {
-        return _.filter(Memory.jobInstructions[roomName], function(job) {
+        let assistanceJobs = _.filter(Memory.jobInstructions[roomName], function(job) {
 
             if(job.assignees === undefined) {
                 job.assignees = [];
@@ -94,5 +96,67 @@ module.exports = {
 
             return job.assignees.length < job.maxAssignees;
         });
+        
+        return _.sortByOrder(assistanceJobs, ['priority'], ['desc']);
+    },
+    
+    /**
+     * Gets all the jobs assigned to this creep
+     */
+    getCreepJobs: function(creepId)
+    {
+        let creepJobs = {};
+        
+        _.forEach(Memory.jobInstructions, (roomJobInstructions) => {
+            Object.assign(creepJobs, _.filter(roomJobInstructions, (jobInstruction) => {
+                return creepId === _.find(jobInstruction.assignees, (assigneeId) => {
+                   return assigneeId === creepId;
+                });
+            }));
+        });
+        
+        return creepJobs;
+    },
+    
+    createJob: function(action, sourceId, params)
+    {
+        let sourceRoomName = null;
+        
+        if(typeof sourceId === 'string') {
+            sourceRoomName = Game.getObjectById(sourceId).room.name;
+        }
+        
+        if(sourceId instanceof Structure) {
+            sourceRoomName = sourceId.room.name;
+        }
+        
+        if(sourceId instanceof RoomPosition) {
+            sourceRoomName = sourceId.roomName;
+        }
+    
+        if(action && sourceRoomName) {
+    
+            Memory.jobInstructions[sourceRoomName].push({
+                id: 'job-user-console-' + Game.time,
+                job: action,
+                source: sourceId,
+                maxAssignees: 1,
+                rolesRequired: ['labourer'],
+                priority: 100,
+                params: params
+            });
+    
+            return true;
+        } else {
+            return false;
+        }
+    },
+    
+    resetJobs: function()
+    {
+        delete Memory.jobInstructions;
+        delete Memory.activeRequirements;
+    
+        return true;
     },
 };

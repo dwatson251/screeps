@@ -23,6 +23,8 @@ module.exports = class JobPlaceConstructionSite extends JobBase
     
     run() 
     {
+        const assignee = this.assignees[0];
+        
         // @TODO: Remove hardcoded spawn
         let positions = this.source.pos.findPathTo(this.target, {
             costCallback: function(roomName, costMatrix) {
@@ -37,7 +39,7 @@ module.exports = class JobPlaceConstructionSite extends JobBase
         
         for(let positionKey in positions) {
             let position = positions[positionKey];
-            let roomPosition = new RoomPosition(position['x'], position['y'], this.assignee.room.name);
+            let roomPosition = new RoomPosition(position['x'], position['y'], assignee.room.name);
             roomPosition.createConstructionSite(this.structureType);
         }
         

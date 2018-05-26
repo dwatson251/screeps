@@ -18,6 +18,8 @@ module.exports = class RequirementsBase
             id: 'job-' + Game.time  + '-' + Helper.uid(),
             requiredBy: requirementKey,
             maxAssignees: 1,
+            assignees: [],
+            rolesRequired: ['labourer'],
         }, this.resolution);
     }
 }

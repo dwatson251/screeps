@@ -34,11 +34,13 @@ module.exports = class JobBase
         let jobId = this.id;
         
         /**
-         * Remove the job from the job list
+         *Attempt to remove the job and it's dependencies from the job list
          */
-        _.remove(Memory.jobInstructions[this.roomName], function(jobInstruction) {
-            return jobId === jobInstruction.id;
-        });
+        try {
+            this.removeJobAndDependencies(jobId);
+        } catch(e) {
+            this.removeJob();
+        }
         
         /**
          * If this job was a dependency for another job, remove this job
@@ -85,7 +87,11 @@ module.exports = class JobBase
     
     setSource(source)
     {
-        this.source = Game.getObjectById(source);
+        this.source = source;
+        
+        if(typeof this.source === 'string') {
+            this.source = Game.getObjectById(source);
+        }
         
         return this;
     }
@@ -129,9 +135,21 @@ module.exports = class JobBase
         return this;
     }
     
+    setPriority(priority)
+    {
+        this.priority = priority;
+        
+        return this;
+    }
+    
     addJobDependency(jobInstruction)
     {
         let jobInstructionInMemory = Helper.findJobInstructionInMemory(this.roomName, this.id);
+        
+        if(!jobInstructionInMemory) {
+            console.log('No job was found with the id', this.id);
+            return;
+        }
         
         jobInstruction.dependencyOf = this.id;
         
@@ -142,5 +160,48 @@ module.exports = class JobBase
         Memory.jobInstructions[this.roomName].push(jobInstruction);
         
         jobInstructionInMemory.dependencies.unshift(jobInstruction.id);
+    }
+    
+    removeJob(jobId = this.id)
+    {
+        _.remove(Memory.jobInstructions[this.roomName], (jobInstruction) => {
+            return jobInstruction.id === jobId;
+        });
+        
+        return true;
+    }
+    
+    removeJobAndDependencies(jobId = this.id)
+    {
+        _.forEach(this.getDependencyChain(jobId), (jobId) => {
+            _.remove(Memory.jobInstructions[this.roomName], (jobInstruction) => {
+                return jobId === jobInstruction.id; 
+            });
+        });  
+        
+        return true;
+    }
+    
+    /**
+     * Returns a list of ID's of jobs (including this one) in the dependency chain
+     * going downwards.
+     */
+    getDependencyChain(collection = [], jobId = this.id)
+    {
+        collection.push(jobId);
+        
+        let jobInstructionInMemory = Helper.findJobInstructionInMemory(this.roomName, this.id);
+        
+        if(!jobInstructionInMemory) {
+            return false;
+        }
+        
+        if(jobInstructionInMemory.dependencies && jobInstructionInMemory.dependencies.length) {
+            _.forEach(jobInstructionInMemory.dependencies, (jobDependency) => {
+                this.getDependencyChain(collection, jobDependency.id);
+            });
+        }
+        
+        return collection;
     }
 }

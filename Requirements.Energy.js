@@ -10,19 +10,26 @@ module.exports = class RequirementsEnergy extends RequirementsBase
         this.structure = structure;
         
         this.resolution = {
-            job: 'transfer',
-            source: this.structure.id,
+            job: 'deposit',
+            priority: 5,
         };
     }
     
     test() 
     {
-        return true;
-        
-        if(this.structure.energy !== undefined && this.structure.energyCapacity !== undefined) {
-            return this.structure.energy < this.structure.energyCapacity;
-        } else {
-            return false;
+        /**
+         * Ideally, we only want to perform this requirement check on one structure in the room, so we designate the controller for that job:
+         */
+        if(this.structure.structureType === STRUCTURE_CONTROLLER) {
+            
+            /**
+             * Test returns true if the energy available is less than 75%
+             */
+            if(this.structure.room.energyAvailable < (this.structure.room.energyCapacityAvailable * 0.75)) {
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 }

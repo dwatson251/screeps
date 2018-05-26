@@ -3,15 +3,12 @@ const RequirementsBase = require('Requirements.Base');
 
 module.exports = class RequirementsSpawnCreep extends RequirementsBase
 {
-    this.assignee = null;
-    this.entityRequired = 'structure';
-    
     constructor()
     {
         super();
         
         this.resolution = {
-            job: 'repair',
+            job: 'spawn',
             source: this.structure.id,
         }
         

@@ -2,24 +2,25 @@ const Helper = require('Helpers');
 const Job = require('JobFactory');
 
 const HarvestRequirement = require('Requirements.Harvest');
+const DepositRequirement = require('Requirements.Deposit');
 
 module.exports = class EntityCreep 
 {
     constructor(creep)
     {
         this.creep = creep;
-        this.role = 'harvester';
+        this.role = creep.memory.role;
         
-        this.randomMessage = [
-            '🔥',
-            '💣',
-        ];
+        // this.randomMessage = [
+        //     '🔥',
+        //     '💣',
+        // ];
         
-        // this.creep.say(this.randomMessage[Math.floor(Math.random() * this.randomMessage.length)], true);
+        // // this.creep.say(this.randomMessage[Math.floor(Math.random() * this.randomMessage.length)], true);
         
-        if(Math.ceil(Math.random() * 10) === Game.time % 10) {
-            this.creep.say(this.randomMessage[Math.floor(Math.random() * this.randomMessage.length)], true);
-        }
+        // if(Math.ceil(Math.random() * 10) === Game.time % 10) {
+        //     this.creep.say(this.randomMessage[Math.floor(Math.random() * this.randomMessage.length)], true);
+        // }
     }
     
     getJobs(roomName, ignoreDependencyJobs = false)
@@ -66,12 +67,15 @@ module.exports = class EntityCreep
             
             let nextJob = this.getDependencies(roomName, creepsJobs[0]);
             
-            let job = new Job(roomName, nextJob);
-            return job.run();
+            if(nextJob.assignees.length) {
+                let job = new Job(roomName, nextJob);
+                this.creep.say(nextJob.job);
+                job.run();
+            }
             
         } else {
                 
-            return this.idle(roomName);
+            this.idle(roomName);
         }
     }
     
@@ -87,6 +91,20 @@ module.exports = class EntityCreep
         
         const dependencyJob = Helper.findJobInstructionInMemory(roomName, parentJob.dependencies[0]);
         
+        /**
+         * Return the original job is this jobs dependency does not have an assigneeId of the creep requesting it
+         * 
+         * This will be used when a dependencies job has less maxAsignees than the parent job
+         */
+        const hasDependencyJob = !!(_.find(dependencyJob.assignees, (assigneeId) => {
+            return assigneeId === this.creep.id;
+        }));
+         
+        if(!hasDependencyJob) {
+            return parentJob;
+        }
+        
+        
         return this.getDependencies(roomName, dependencyJob);
     }
     
@@ -101,9 +119,10 @@ module.exports = class EntityCreep
     idle(roomName) 
     {
         // @TODO: Remove hardcoded spawn
-        let harvestRequirement = new HarvestRequirement(Game.spawns['home']);
-        let harvestResolution = harvestRequirement.getResolution();
-        harvestResolution.assignees = [this.creep.id];
-        Memory.jobInstructions[roomName].push(harvestResolution);
+        let depositRequirement = new DepositRequirement(Game.spawns['home']);
+        let depositResolution = depositRequirement.getResolution();
+        depositResolution.assignees = [this.creep.id];
+        depositResolution.requiredBy = 'IdleTask';
+        Memory.jobInstructions[roomName].push(depositResolution);
     }
 }
